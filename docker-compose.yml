@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  booking-db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${HOST_DB_PORT}:${DB_PORT}"
+    volumes:
+      - booking-pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+
+
+  booking-app:
+    build: .
+    ports:
+      - "${HOST_PORT}:${PORT}"
+    environment:
+      DB_HOST: booking-db
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT}
+    depends_on:
+      - booking-db
+    networks:
+      - app-network
+    volumes:
+      - ./src:/app/src
+      - /app/node_modules  # To ensure node_modules are not overwritten by the volume mount
+
+volumes:
+  booking-pgdata:
+
+networks:
+  app-network:
+    external: true
