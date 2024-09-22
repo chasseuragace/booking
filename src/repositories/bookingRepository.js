@@ -35,10 +35,10 @@ class BookingRepository {
         const result = await pool.query(query);
         return result.rows;
     }
-    async getAllFilteredBookings({bookingIds, userIds, entityIds, statuses }) {
+    async getAllFilteredBookings({ bookingIds, userIds, entityIds, statuses, fromDate, toDate }) {
         let query = 'SELECT * FROM bookings WHERE 1=1';
         const values = [];
-    
+        
         if (userIds && userIds.length > 0) {
             query += ' AND user_id = ANY($' + (values.length + 1) + ')';
             values.push(userIds);
@@ -47,15 +47,25 @@ class BookingRepository {
             query += ' AND id = ANY($' + (values.length + 1) + ')';
             values.push(bookingIds);
         }
-    
         if (entityIds && entityIds.length > 0) {
             query += ' AND entity_id = ANY($' + (values.length + 1) + ')';
             values.push(entityIds);
         }
-    
         if (statuses && statuses.length > 0) {
             query += ' AND status = ANY($' + (values.length + 1) + ')';
             values.push(statuses);
+        }
+        
+        // Use BETWEEN for created_at date range filter
+        if (fromDate && toDate) {
+            query += ' AND created_at BETWEEN $' + (values.length + 1) + ' AND $' + (values.length + 2);
+            values.push(fromDate, toDate);
+        } else if (fromDate) {
+            query += ' AND created_at >= $' + (values.length + 1);
+            values.push(fromDate);
+        } else if (toDate) {
+            query += ' AND created_at <= $' + (values.length + 1);
+            values.push(toDate);
         }
     
         try {
@@ -66,6 +76,7 @@ class BookingRepository {
             throw error;
         }
     }
+    
     
 }
 
